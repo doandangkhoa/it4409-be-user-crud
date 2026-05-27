@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Người dùng</title>
+    <!-- Nhúng Font Inter cho giao diện hiện đại -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* --- Reset & Global Styles --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+        
+        :root {
+            --primary-color: #2563eb; /* Blue 600 */
+            --primary-hover: #1d4ed8; /* Blue 700 */
+            --bg-color: #f1f5f9; /* Slate 100 */
+            --panel-color: #ffffff;
+            --text-main: #0f172a; /* Slate 900 */
+            --text-sub: #64748b; /* Slate 500 */
+            --border-color: #e2e8f0; /* Slate 200 */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --transition: all 0.2s ease-in-out;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            padding: 40px 20px; 
+            background-color: var(--bg-color); 
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { 
+            max-width: 1100px; 
+            margin: 0 auto; 
+            background: var(--panel-color); 
+            padding: 32px; 
+            border-radius: var(--radius-lg); 
+            box-shadow: var(--shadow-md); 
+        }
+
+        h1 { 
+            margin-bottom: 28px; 
+            color: var(--text-main); 
+            text-align: left; 
+            font-weight: 700;
+            font-size: 28px;
+            letter-spacing: -0.5px;
+        }
+
+        /* --- Header Actions (Search & Add) --- */
+        .header-actions { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 24px; 
+            flex-wrap: wrap; 
+            gap: 16px; 
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Tùy biến ô tìm kiếm */
+        .search-bar { position: relative; flex-grow: 1; max-width: 400px; }
+        .search-bar::before {
+            content: '🔍'; /* Icon kính lúp đơn giản */
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            opacity: 0.5;
+        }
+
+        .search-bar input { 
+            width: 100%;
+            padding: 12px 12px 12px 42px; 
+            font-size: 15px; 
+            font-family: inherit;
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-md); 
+            background-color: #ffffff;
+            transition: var(--transition);
+            color: var(--text-main);
+        }
+        .search-bar input:focus { 
+            border-color: var(--primary-color); 
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .search-bar input::placeholder { color: var(--text-sub); opacity: 0.7; }
+
+        /* --- Buttons Style --- */
+        button { 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: var(--radius-md); 
+            cursor: pointer; 
+            font-size: 14px; 
+            font-weight: 600;
+            font-family: inherit;
+            transition: var(--transition); 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* Nút chính (Thêm mới, Lưu) */
+        button.btn-primary {
+            background-color: var(--primary-color); 
+            color: white; 
+            box-shadow: var(--shadow-sm);
+        }
+        button.btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        button.btn-primary:active { transform: translateY(0px); }
+
+        button:disabled { background: #e2e8f0 !important; color: #94a3b8 !important; cursor: not-allowed; box-shadow: none !important; transform: none !important;}
+
+        /* Nút trong bảng */
+        .action-btns { display: flex; gap: 8px; }
+        
+        button.btn-edit { 
+            background: #eff6ff; 
+            color: var(--primary-color); 
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        button.btn-edit:hover { background: #dbeafe; }
+
+        button.btn-delete { 
+            background: #fff1f2; 
+            color: #e11d48; 
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        button.btn-delete:hover { background: #ffe4e6; }
+
+        button.btn-cancel { 
+            background: #f1f5f9; 
+            color: var(--text-main); 
+        }
+        button.btn-cancel:hover { background: #e2e8f0; }
+        
+        /* --- Table Style (Modern) --- */
+        .table-responsive {
+            background: #ffffff;
+            border-radius: var(--radius-md);
+            /* border: 1px solid var(--border-color); */
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 15px; }
+        
+        th, td { padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        
+        th { 
+            background-color: #f8fafc; 
+            color: var(--text-sub); 
+            font-weight: 600; 
+            font-size: 13px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: #f8fafc; }
+        
+        /* Cột STT nhỏ lại */
+        th:first-child, td:first-child { width: 60px; text-align: center; color: var(--text-sub); }
+        /* Cột thao tác */
+        th:last-child, td:last-child { width: 160px; }
+
+        /* --- Pagination Style --- */
+        .pagination { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            gap: 16px;
+            padding: 16px 0 0 0;
+            color: var(--text-sub);
+            font-size: 14px;
+        }
+        
+        .pagination-info { display: flex; align-items: center; gap: 8px; }
+        
+        .pagination select { 
+            padding: 6px 10px; 
+            border-radius: 6px; 
+            border: 1px solid var(--border-color); 
+            font-family: inherit; 
+            font-size: 14px;
+            cursor: pointer;
+            background-color: white;
+        }
+        .pagination select:focus { border-color: var(--primary-color); }
+        
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .page-indicator { margin: 0 8px; font-weight: 500; color: var(--text-main); }
+        
+        /* Style lại nút Prev/Next nhỏ gọn hơn */
+        .pagination-controls button {
+            padding: 8px 14px;
+            background: white;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-weight: 500;
+        }
+        .pagination-controls button:hover:not(:disabled) {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* --- Modal Style (Clean & Glassmorphism hint) --- */
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(15, 23, 42, 0.5); /* Slate 900 với opacity */
+            display: flex; align-items: center; justify-content: center; 
+            z-index: 1000; 
+            backdrop-filter: blur(4px); /* Làm mờ hậu cảnh nhẹ */
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        .modal-content { 
+            background: var(--panel-color); 
+            padding: 32px; 
+            border-radius: var(--radius-lg); 
+            width: 480px; 
+            max-width: 95%; 
+            box-shadow: var(--shadow-lg); 
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        .modal-content h3 { 
+            margin-bottom: 24px; 
+            font-size: 20px; 
+            font-weight: 700; 
+            letter-spacing: -0.5px; 
+        }
+        
+        .form-group { margin-bottom: 18px; }
+        
+        .modal-content label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: 500; 
+            font-size: 14px; 
+            color: var(--text-main);
+        }
+        
+        .modal-content input { 
+            width: 100%; 
+            padding: 11px 14px; 
+            font-size: 15px; 
+            font-family: inherit;
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-md); 
+            transition: var(--transition);
+        }
+        .modal-content input:focus { 
+            border-color: var(--primary-color); 
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .error { color: #ef4444; font-size: 12px; margin-top: 6px; font-weight: 500; }
+        
+        .modal-actions { 
+            margin-top: 32px; 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 12px; 
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* --- Notification Toast Style --- */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 420px;
+        }
+
+        .notification {
+            background: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            padding: 16px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            animation: slideInRight 0.3s ease-out;
+            min-width: 280px;
+        }
+
+        .notification.error {
+            border-left: 4px solid #ef4444;
+            background: #fef2f2;
+        }
+
+        .notification.error .icon {
+            color: #ef4444;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .notification.success {
+            border-left: 4px solid #10b981;
+            background: #f0fdf4;
+        }
+
+        .notification.success .icon {
+            color: #10b981;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .notification.warning {
+            border-left: 4px solid #f59e0b;
+            background: #fffbeb;
+        }
+
+        .notification.warning .icon {
+            color: #f59e0b;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: var(--text-main);
+        }
+
+        .notification-message {
+            font-size: 13px;
+            color: var(--text-sub);
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .notification-details {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-sub);
+            font-size: 18px;
+            padding: 0;
+            flex-shrink: 0;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .notification-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideInRight {
+            from { 
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to { 
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from { 
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to { 
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        /* --- Connection Status Bar --- */
+        .connection-status {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 12px 20px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 14px;
+            z-index: 1999;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .connection-status.online {
+            background: #dcfce7;
+            color: #166534;
+            border-bottom: 1px solid #86efac;
+        }
+
+        .connection-status.offline {
+            background: #fee2e2;
+            color: #991b1b;
+            border-bottom: 1px solid #fca5a5;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* --- Responsive Tweaks --- */
+        @media (max-width: 768px) {
+            body { padding: 20px 10px; }
+            .container { padding: 20px; }
+            h1 { font-size: 24px; }
+            th, td { padding: 12px 8px; font-size: 14px; }
+            .header-actions { flex-direction: column; align-items: stretch; }
+            .search-bar { max-width: 100%; }
+            .action-btns { flex-direction: column; gap: 4px; }
+            button { padding: 8px 14px; font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        // --- 0. Connection Status Component ---
+        function ConnectionStatus({ isOnline }) {
+            return (
+                <div className={`connection-status ${isOnline ? 'online' : 'offline'}`}>
+                    {isOnline ? (
+                        <>✅ Kết nối thành công - Server & Database bình thường</>
+                    ) : (
+                        <>❌ Mất kết nối - Server hoặc Database không khả dụng. Vui lòng kiểm tra...</>
+                    )}
+                </div>
+            );
+        }
+
+        // --- 1. Notification Component (Toast hiển thị lỗi) ---
+        function Notification({ notifications, onClose }) {
+            return (
+                <div className="notification-container">
+                    {notifications.map((notif) => (
+                        <div key={notif.id} className={`notification ${notif.type}`}>
+                            <span className="icon">{
+                                notif.type === 'error' ? '❌' : 
+                                notif.type === 'success' ? '✅' : 
+                                '⚠️'
+                            }</span>
+                            <div className="notification-content">
+                                <div className="notification-title">{notif.title}</div>
+                                <div className="notification-message">{notif.message}</div>
+                                {notif.details && (
+                                    <div className="notification-details">
+                                        {Array.isArray(notif.details) ? notif.details.join(", ") : notif.details}
+                                    </div>
+                                )}
+                            </div>
+                            <button className="notification-close" onClick={() => onClose(notif.id)}>×</button>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // --- 1. SearchBar Component (Có Debounce) ---
+        // Thêm icon kính lúp qua CSS class
+        function SearchBar({ value, onChange }) {
+            const [searchInput, setSearchInput] = useState(value);
+
+            useEffect(() => {
+                const timer = setTimeout(() => {
+                    onChange(searchInput);
+                }, 500);
+                return () => clearTimeout(timer);
+            }, [searchInput, onChange]);
+
+            return (
+                <div className="search-bar">
+                    <input 
+                        type="text" 
+                        placeholder="Tìm tên, email, địa chỉ..." 
+                        value={searchInput} 
+                        onChange={(e) => setSearchInput(e.target.value)} 
+                    />
+                </div>
+            );
+        }
+
+        // --- 2. UserTable Component (STT liên tục, Giao diện mới) ---
+        // Thay đổi chữ thành Icon unicode cho gọn
+        function UserTable({ users, page, limit, onEdit, onDelete }) {
+            return (
+                <div className="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Họ tên</th>
+                                <th>Tuổi</th>
+                                <th>Email</th>
+                                <th>Địa chỉ</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {users.length === 0 ? (
+                                <tr><td colSpan="6" style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>Chưa có dữ liệu người dùng</td></tr>
+                            ) : (
+                                users.map((user, index) => (
+                                    <tr key={user._id}>
+                                        <td>{(page - 1) * limit + index + 1}</td>
+                                        <td style={{fontWeight: '500'}}>{user.name}</td>
+                                        <td>{user.age}</td>
+                                        <td style={{color: '#2563eb'}}>{user.email}</td>
+                                        <td>{user.address || "-"}</td>
+                                        <td>
+                                            <div className="action-btns">
+                                                <button className="btn-edit" onClick={() => onEdit(user)}>✍️ Sửa</button>
+                                                <button className="btn-delete" onClick={() => {
+                                                    if(window.confirm(`Bạn có chắc chắn muốn xóa người dùng "${user.name}"?`)) onDelete(user._id);
+                                                }}>🗑️ Xóa</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        }
+
+        // --- 3. Pagination Component (Làm sạch giao diện) ---
+        function Pagination({ page, totalPages, limit, onPageChange, onLimitChange, disabled = false }) {
+            return (
+                <div className="pagination">
+                    <div className="pagination-info">
+                        <span>Hiển thị</span>
+                        <select value={limit} onChange={(e) => {
+                            onLimitChange(Number(e.target.value));
+                            onPageChange(1); // Reset về trang 1 khi đổi limit
+                        }} disabled={disabled}>
+                            <option value="3">3</option>
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                        </select> 
+                        <span>dòng mỗi trang</span>
+                    </div>
+                    <div className="pagination-controls">
+                        <button onClick={() => onPageChange(page - 1)} disabled={page <= 1 || disabled}>
+                            &larr; Trước
+                        </button>
+                        <span className="page-indicator">
+                            {totalPages === 0 ? '0 / 0' : `${page} / ${totalPages}`}
+                        </span>
+                        <button onClick={() => onPageChange(page + 1)} disabled={page >= totalPages || totalPages === 0 || disabled}>
+                            Sau &rarr;
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 4. Modal Component (Thiết kế lại Form rộng rãi hơn) ---
+        function UserModal({ user, onClose, onSave, onError }) {
+            const [formData, setFormData] = useState(
+                user || { name: "", age: "", email: "", address: "" }
+            );
+            const [errors, setErrors] = useState({});
+            const [isSaving, setIsSaving] = useState(false);
+
+            const handleChange = (e) => {
+                setFormData({ ...formData, [e.target.name]: e.target.value });
+                // Xóa lỗi khi người dùng bắt đầu nhập lại
+                if (errors[e.target.name]) {
+                    setErrors({...errors, [e.target.name]: null});
+                }
+            };
+
+            const validate = () => {
+                const newErrors = {};
+                const nameTrimmed = formData.name.trim();
+                const emailTrimmed = formData.email.trim();
+
+                if (!nameTrimmed || nameTrimmed.length < 2) newErrors.name = "Tên phải có ít nhất 2 ký tự";
+                
+                if (formData.age === "" || formData.age === null) {
+                    newErrors.age = "Vui lòng nhập tuổi";
+                } else if (Number(formData.age) < 0 || Number(formData.age) > 120) {
+                    newErrors.age = "Tuổi không hợp lệ (0-120)";
+                }
+
+                const emailRegex = /^\S+@\S+\.\S+$/;
+                if (!emailTrimmed) {
+                    newErrors.email = "Vui lòng nhập email";
+                } else if (!emailRegex.test(emailTrimmed)) {
+                    newErrors.email = "Định dạng email không hợp lệ";
+                }
+
+                setErrors(newErrors);
+                return Object.keys(newErrors).length === 0;
+            };
+
+            const handleSubmit = async () => {
+                if (!validate()) return;
+                
+                setIsSaving(true);
+                const payload = {
+                    ...formData,
+                    name: formData.name.trim(),
+                    email: formData.email.trim(),
+                    address: formData.address.trim()
+                };
+
+                const url = user ? `http://localhost:3001/api/users/${user._id}` : `http://localhost:3001/api/users`;
+                const method = user ? "PUT" : "POST";
+
+                try {
+                    const res = await fetch(url, {
+                        method,
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        // Hiển thị lỗi chi tiết từ API
+                        const errorTitle = user ? "Cập nhật thất bại" : "Tạo người dùng thất bại";
+                        onError({
+                            title: errorTitle,
+                            message: data.message || "Có lỗi xảy ra",
+                            details: data.details,
+                            type: 'error'
+                        });
+                    } else {
+                        // Thành công
+                        onError({
+                            title: "Thành công",
+                            message: data.message || (user ? "Cập nhật người dùng thành công" : "Tạo người dùng thành công"),
+                            type: 'success'
+                        });
+                        onSave();
+                    }
+                } catch (err) {
+                    onError({
+                        title: "Lỗi kết nối",
+                        message: "Không thể kết nối tới server",
+                        details: err.message,
+                        type: 'error'
+                    });
+                } finally {
+                    setIsSaving(false);
+                }
+            };
+
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <h3>{user ? "Cập nhật thông tin" : "Thêm người dùng mới"}</h3>
+                        
+                        <div className="form-group">
+                            <label>Họ và tên *</label>
+                            <input name="name" value={formData.name} onChange={handleChange}/>
+                            {errors.name && <p className="error">{errors.name}</p>}
+                        </div>
+
+                        <div className="form-group">
+                            <label>Tuổi *</label>
+                            <input name="age" type="number" value={formData.age} onChange={handleChange}  />
+                            {errors.age && <p className="error">{errors.age}</p>}
+                        </div>
+
+                        <div className="form-group">
+                            <label>Địa chỉ Email *</label>
+                            <input name="email" type="email" value={formData.email} onChange={handleChange}  />
+                            {errors.email && <p className="error">{errors.email}</p>}
+                        </div>
+
+                        <div className="form-group">
+                            <label>Địa chỉ thường trú</label>
+                            <input name="address" value={formData.address} onChange={handleChange} />
+                        </div>
+
+                        <div className="modal-actions">
+                            <button className="btn-cancel" onClick={onClose} disabled={isSaving}>Hủy bỏ</button>
+                            <button className="btn-primary" onClick={handleSubmit} disabled={isSaving}>
+                                {isSaving ? "Đang xử lý..." : (user ? "Cập nhật" : "Lưu người dùng")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 6. Main App Component ---
+        function App() {
+            const [users, setUsers] = useState([]);
+            const [page, setPage] = useState(1);
+            const [limit, setLimit] = useState(5);
+            const [search, setSearch] = useState("");
+            const [totalPages, setTotalPages] = useState(0);
+            const [showModal, setShowModal] = useState(false);
+            const [editingUser, setEditingUser] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [notifications, setNotifications] = useState([]);
+            const [isOnline, setIsOnline] = useState(true);
+            const [lastOnlineStatus, setLastOnlineStatus] = useState(true);
+
+            // Thêm notification
+            const addNotification = (notif) => {
+                const id = Date.now();
+                const notification = { ...notif, id };
+                setNotifications(prev => [...prev, notification]);
+                
+                // Tự động xóa sau 5 giây
+                setTimeout(() => {
+                    removeNotification(id);
+                }, 5000);
+                
+                return id;
+            };
+
+            // Xóa notification
+            const removeNotification = (id) => {
+                setNotifications(prev => prev.filter(n => n.id !== id));
+            };
+
+            // Health Check - Kiểm tra kết nối mỗi 5 giây
+            useEffect(() => {
+                const healthCheck = async () => {
+                    try {
+                        const res = await fetch("http://localhost:3001/api/health", {
+                            method: "GET",
+                            timeout: 3000
+                        });
+                        
+                        if (res.ok) {
+                            if (!isOnline) {
+                                setIsOnline(true);
+                                addNotification({
+                                    title: "Kết nối khôi phục",
+                                    message: "Server & Database đã kết nối thành công",
+                                    type: 'success'
+                                });
+                            }
+                        } else {
+                            setIsOnline(false);
+                        }
+                    } catch (err) {
+                        setIsOnline(false);
+                    }
+                };
+
+                // Check ngay khi component mount
+                healthCheck();
+
+                // Sau đó kiểm tra mỗi 5 giây
+                const interval = setInterval(healthCheck, 5000);
+                
+                return () => clearInterval(interval);
+            }, [isOnline]);
+
+            // Hiển thị notification khi status thay đổi từ online -> offline
+            useEffect(() => {
+                if (lastOnlineStatus && !isOnline) {
+                    addNotification({
+                        title: "Mất kết nối với Server",
+                        message: "Không thể truy cập Server hoặc Database. Đang thử kết nối lại...",
+                        type: 'error'
+                    });
+                }
+                setLastOnlineStatus(isOnline);
+            }, [isOnline]);
+
+            const fetchUsers = useCallback(async () => {
+                if (!isOnline) {
+                    setUsers([]);
+                    setTotalPages(0);
+                    return;
+                }
+
+                setLoading(true);
+                try {
+                    const url = `http://localhost:3001/api/users?page=${page}&limit=${limit}&search=${search}`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    
+                    if(res.ok) {
+                        setUsers(data.data);
+                        setTotalPages(data.totalPages);
+                        // Nếu trang hiện tại lớn hơn tổng số trang mới (do search hoặc đổi limit)
+                        if (page > data.totalPages && data.totalPages > 0) {
+                            setPage(data.totalPages);
+                        }
+                    } else {
+                        addNotification({
+                            title: "Lỗi tải dữ liệu",
+                            message: data.message || "Không thể tải danh sách người dùng",
+                            details: data.details,
+                            type: 'error'
+                        });
+                        setUsers([]);
+                        setTotalPages(0);
+                    }
+                } catch (err) {
+                    addNotification({
+                        title: "Lỗi kết nối",
+                        message: "Không thể kết nối tới server",
+                        details: err.message,
+                        type: 'error'
+                    });
+                    setUsers([]);
+                    setTotalPages(0);
+                } finally {
+                    setLoading(false);
+                }
+            }, [page, limit, search, isOnline]);
+
+            useEffect(() => {
+                fetchUsers();
+            }, [fetchUsers]);
+
+            const deleteUser = async (id) => {
+                try {
+                    const res = await fetch(`http://localhost:3001/api/users/${id}`, { method: "DELETE" });
+                    const data = await res.json();
+                    
+                    if (!res.ok) {
+                        addNotification({
+                            title: "Xóa thất bại",
+                            message: data.message || "Không thể xóa người dùng",
+                            details: data.details,
+                            type: 'error'
+                        });
+                    } else {
+                        addNotification({
+                            title: "Thành công",
+                            message: data.message || "Xóa người dùng thành công",
+                            type: 'success'
+                        });
+                        
+                        // Xử lý logic chuyển trang nếu xóa hết phần tử ở trang cuối
+                        if (users.length === 1 && page > 1) {
+                            setPage(page - 1);
+                        } else {
+                            fetchUsers();
+                        }
+                    }
+                } catch (err) {
+                    addNotification({
+                        title: "Lỗi kết nối",
+                        message: "Không thể kết nối tới server",
+                        details: err.message,
+                        type: 'error'
+                    });
+                }
+            };
+
+            const handleSearchChange = React.useCallback((val) => {
+                setSearch((prevSearch) => {
+                    // Chỉ reset về trang 1 nếu từ khóa tìm kiếm thực sự thay đổi
+                    if (prevSearch !== val) {
+                        setPage(1); 
+                        return val;
+                    }
+                    return prevSearch;
+                });
+            }, []);
+
+            return (
+                <>
+                    <ConnectionStatus isOnline={isOnline} />
+                    <div className="container" style={{ marginTop: isOnline ? '40px' : '60px' }}>
+                        <Notification notifications={notifications} onClose={removeNotification} />
+                        
+                        <h1>Danh sách Người dùng</h1>
+                        
+                        <div className="header-actions">
+                            <SearchBar value={search} onChange={handleSearchChange} />
+                            <button className="btn-primary" onClick={() => { setEditingUser(null); setShowModal(true); }} disabled={!isOnline}>
+                                <span>+</span> Thêm người dùng
+                            </button>
+                        </div>
+
+                        {!isOnline ? (
+                            <div style={{textAlign: 'center', padding: '40px', color: '#991b1b', background: '#fee2e2', borderRadius: '8px', marginBottom: '24px'}}>
+                                <div style={{fontSize: '48px', marginBottom: '12px'}}>🔌</div>
+                                <div style={{fontSize: '16px', fontWeight: '600', marginBottom: '6px'}}>Mất kết nối với Server</div>
+                                <div style={{fontSize: '14px', color: '#7f1d1d'}}>Vui lòng kiểm tra xem server có đang chạy không. Chương trình sẽ tự động kết nối lại...</div>
+                            </div>
+                        ) : loading ? (
+                            <div style={{textAlign: 'center', padding: '40px', color: '#64748b'}}>Đang tải dữ liệu...</div>
+                        ) : (
+                            <UserTable 
+                                users={users} 
+                                page={page}
+                                limit={limit}
+                                onEdit={(user) => { setEditingUser(user); setShowModal(true); }} 
+                                onDelete={deleteUser} 
+                            />
+                        )}
+                        
+                        <Pagination 
+                            page={page} totalPages={totalPages} limit={limit} 
+                            onPageChange={setPage} onLimitChange={setLimit} 
+                            disabled={!isOnline}
+                        />
+
+                        {showModal && (
+                            <UserModal 
+                                user={editingUser} 
+                                onClose={() => setShowModal(false)} 
+                                onSave={() => { fetchUsers(); setShowModal(false); }} 
+                                onError={addNotification}
+                            />
+                        )}
+                    </div>
+                </>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+</html>
