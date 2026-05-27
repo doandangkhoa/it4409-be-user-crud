@@ -73,7 +73,50 @@ app.get("/api/health", (req, res) => {
         });
     }
 });
+app.get("/", async (req, res) => {
+    try {
+        let page = parseInt(req.query.page) || 1;
+        let limit = parseInt(req.query.limit) || 5;
 
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 5;
+        if (limit > 50) limit = 50;
+
+        const search = req.query.search ? req.query.search.trim() : "";
+        const filter = search
+            ? {
+                $or: [
+                    { name: { $regex: search, $options: "i" } },
+                    { email: { $regex: search, $options: "i" } },
+                    { address: { $regex: search, $options: "i" } }
+                ]
+            }
+            : {};
+
+        const skip = (page - 1) * limit;
+
+        // Sử dụng promise.all để chạy song song 2 query
+        const [users, total] = await Promise.all([
+            User.find(filter).sort({ updatedAt: -1, _id: -1 }).skip(skip).limit(limit),
+            User.countDocuments(filter)
+        ]);
+
+        const totalPages = Math.ceil(total / limit);
+
+        res.status(200).json({ page, limit, total, totalPages, data: users });
+    } catch (err) {
+        const errorMsg = `❌ GET /api/users - Error: ${err.message}`;
+        console.error(`[${new Date().toISOString()}] ${errorMsg}`);
+        console.error("Stack trace:", err.stack);
+        res.status(500).json({ 
+            status: "error",
+            code: 500,
+            message: "Lỗi Server: Không thể lấy danh sách người dùng",
+            details: err.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
 // 2. TODO: Implement API endpoints
 app.get("/api/users", async (req, res) => {
     try {
