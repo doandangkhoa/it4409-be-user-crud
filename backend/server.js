@@ -85,6 +85,7 @@ app.get("/", (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
+
 // 2. TODO: Implement API endpoints
 app.get("/api/users", async (req, res) => {
     try {
