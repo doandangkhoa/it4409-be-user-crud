@@ -1,3 +1,4 @@
+require("dotenv").config({quiet: true});
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -14,9 +15,9 @@ app.use((req, res, next) => {
 });
 
 mongoose
-    .connect("mongodb+srv://20235353:DQcnW6TejvtOdF0y@20235353.dhvj7rf.mongodb.net/it4409-db")
-    .then(() => console.log("✅ Connected to MongoDB"))
-    .catch((err) => console.error("❌ MongoDB Error:", err));
+    .connect(process.env.MONGO_URI)
+    .then(() => console.log("Connected to MongoDB"))
+    .catch((err) => console.error("MongoDB Error:", err));
 
 // 1. TODO: Tạo Schema
 const UserSchema = new mongoose.Schema({
@@ -338,7 +339,5 @@ app.use((err, req, res, next) => {
 // Start server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-    console.log(`\n${"=".repeat(50)}`);
-    console.log(`✅ Server running on http://localhost:${PORT}`);
-    console.log(`${"=".repeat(50)}\n`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
