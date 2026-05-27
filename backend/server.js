@@ -351,5 +351,5 @@ app.use((err, req, res, next) => {
 // Start server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on https://it4409-be-user-crud-2.onrender.com:${PORT}`);
 });
